@@ -75,8 +75,8 @@ void wall_detection()
       Serial3.println("2");
       cw_rotation_flag = 1;
       rollover_occurred = 0;
-      leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
-      rightMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      leftMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
       target_head = sEulAnalog.head + SMALL_ANGLE_INCREMENT;
       if (target_head > DEG_IN_CIRCLE - 1)
       {
@@ -90,8 +90,8 @@ void wall_detection()
       Serial3.println("3");
       ccw_rotation_flag = 1;
       rollover_occurred = 0;
-      leftMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
-      rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      rightMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
       target_head = sEulAnalog.head - SMALL_ANGLE_INCREMENT;
       
       if (target_head < 0)

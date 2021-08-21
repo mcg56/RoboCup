@@ -127,6 +127,7 @@ void setup() {
   imu_init();
   robot_init();
   task_init();
+  stepper_init();
   
   Wire.begin();
   

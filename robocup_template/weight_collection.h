@@ -12,6 +12,7 @@
 #include <Servo.h>                  //control the DC motors
 //#include <Herkulex.h>               //smart servo
 #include <Wire.h>                   //for I2C and SPI
+#include <AccelStepper.h>           //control steppermotors
 
 
 #include "sensors.h"               //will need sensor library to detect weights
@@ -23,10 +24,13 @@
 
 
 
+
 void weight_scan(/* whatever parameters */);
 
 
 void collect_weight();
+
+void stepper_init();
 
 
 
