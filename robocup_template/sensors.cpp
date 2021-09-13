@@ -34,7 +34,7 @@ MedianFilter2<int> medianFilter3(windowSize);
 MedianFilter2<int> medianFilter4(windowSize);
 MedianFilter2<int> medianFilter5(windowSize);
 
-
+double balance[1000];
 
 
 typedef enum {
