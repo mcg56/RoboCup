@@ -17,6 +17,8 @@
 
 bool cw_rotation_flag = 0;
 bool ccw_rotation_flag = 0;
+int weight_right = 0;
+int weight_left = 0;
 
 
 
@@ -58,7 +60,7 @@ void check_rotation(float target_head, bool rollover_occurred) // TO FIX: Need t
 }
 
 void wall_detection()
-{
+{ 
   static float target_head;
   //Serial3.println(target_head);
   static int count = 0;
@@ -70,7 +72,7 @@ void wall_detection()
   } else
   */
   {
-    if (rangeMedIR_2 < 300)
+    /*if (rangeMedIR_2 < 200)
     {
       Serial3.println("2");
       cw_rotation_flag = 1;
@@ -85,7 +87,7 @@ void wall_detection()
       }
       
     }
-    else if (rangeMedIR_3 < 300)
+    else if (rangeMedIR_3 < 200)
     {
       Serial3.println("3");
       ccw_rotation_flag = 1;
@@ -99,7 +101,36 @@ void wall_detection()
         target_head = DEG_IN_CIRCLE + target_head; //CHECK WORKS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         rollover_occurred = 1;
       }
+    }*/
+    if (rangeShortIR_0 < 200)
+    {
+      cw_rotation_flag = 1;
+      rollover_occurred = 0;
+      leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      rightMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      target_head = sEulAnalog.head + SMALL_ANGLE_INCREMENT;
+      if (target_head > DEG_IN_CIRCLE - 1)
+      {
+        target_head = target_head - DEG_IN_CIRCLE;
+        rollover_occurred = 1;
+      }
+      
     }
+    else if (rangeShortIR_1 < 200)
+    {
+      ccw_rotation_flag = 1;
+      rollover_occurred = 0;
+      leftMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      target_head = sEulAnalog.head - SMALL_ANGLE_INCREMENT;
+      
+      if (target_head < 0)
+      {
+        target_head = DEG_IN_CIRCLE + target_head; //CHECK WORKS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        rollover_occurred = 1;
+      }
+    }
+    
     /*else if (rangeLongIR_4 < 300)
     {
       count += 1;
@@ -129,11 +160,39 @@ void wall_detection()
         }
       }
       
-    }*/else {
-      Serial3.println("4");
+    }*/
+    else if (((rangeLongIR_4-(rangeMedIR_2 - 80)) > 150) && (rangeLongIR_4 > 500))
+    {
+      weight_right = weight_right + 1;
+
+    }
+    else if (weight_right > 3)
+    {
+      //Serial3.println("Right");
+      leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      rightMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      weight_right = 0;
+      delay(150);
+    }
+    else if (((rangeLongIR_5-(rangeMedIR_3 - 80)) > 150) && (rangeLongIR_5 > 500))
+    {
+      weight_left = weight_left + 1;
+
+    }
+    else if (weight_left > 3)
+    {
+      //Serial3.println("Left");
+      leftMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
+      rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      weight_left = 0;
+      delay(150);
+    }
+    else {
       rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
       leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
+      //Serial3.println("NO");
     }
+    //Serial3.println("No Weight");
   }
   
   /*Serial.print("cw flag ");

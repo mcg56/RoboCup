@@ -10,6 +10,7 @@
 // SET THIS TO REAL VALUES
 #define RIGHT_MOTOR_ADDRESS 3      //Pin corresponding to the left dc motor
 #define LEFT_MOTOR_ADDRESS 2     //Pin corresponding to the right dc motor
+#define SERVO_BIG_ADDRESS 4
 #define MIN_SPEED_CAP 1           //Set the minimum speed value that can be written to the motors
 #define MAX_SPEED_CAP 1           //Set the maximum speed value that can be written to the motors
 #define MOTOR_STOP_SPEED 1500    // Down to 1000 reverse, 2000 forward
@@ -27,6 +28,7 @@ extern int leftMotorSpeed;
 extern int rightMotorSpeed;
 extern Servo right_motor;
 extern Servo left_motor;
+extern Servo servo_big;
 
 
 void check_speed_limits(/*parameters*/);

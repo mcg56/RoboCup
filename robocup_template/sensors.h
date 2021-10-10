@@ -4,15 +4,15 @@
 
 #ifndef SENSORS_H_
 #define SENSORS_H_
-#define SHORTIR_0_ADDRESS A0
-#define SHORTIR_1_ADDRESS A1
-#define MEDIUMIR_2_ADDRESS A2
+#define SHORTIR_0_ADDRESS A4
+#define SHORTIR_1_ADDRESS A5
+#define MEDIUMIR_2_ADDRESS A7
 #define MEDIUMIR_3_ADDRESS A3
-#define LONGIR_4_ADDRESS A4
-#define LONGIR_5_ADDRESS A5
+#define LONGIR_4_ADDRESS A6
+#define LONGIR_5_ADDRESS A2
 #define ULTRASOUND_A_TRIG_PIN 31
 #define ULTRASOUND_A_ECHO_PIN 30
-#define DIG_IR_0_PIN 42
+#define DIG_IR_0_PIN 38
 
 #include "Arduino.h"
 #include "DFRobot_BNO055.h"

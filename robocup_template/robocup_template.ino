@@ -1,6 +1,6 @@
 
 /********************************************************************************
- *                               ROBOCUP TEMPLATE                              
+ *                               ROBOCUP TEMPLATE         MCG                     
  *        
  *  
  *  This is a template program design with modules for 
@@ -32,7 +32,7 @@
 
 // Task period Definitions
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
-#define US_READ_TASK_PERIOD                 4
+#define US_READ_TASK_PERIOD                 10
 #define IR_READ_TASK_PERIOD                 4
 #define COLOUR_READ_TASK_PERIOD             40
 #define SENSOR_AVERAGE_PERIOD               40
@@ -127,7 +127,6 @@ void setup() {
   imu_init();
   robot_init();
   task_init();
-  stepper_init();
   
   Wire.begin();
   
@@ -157,6 +156,8 @@ void robot_init() {
     left_motor.attach(RIGHT_MOTOR_ADDRESS);  // attaches the servo pin 2 to the servo object
     leftMotorSpeed = MOTOR_STOP_SPEED;
     rightMotorSpeed = MOTOR_STOP_SPEED;
+    servo_big.attach(SERVO_BIG_ADDRESS);
+    servo_big.write(0);
     Serial.println("Robot is ready \n");
 }
 
@@ -217,8 +218,9 @@ void loop() {
   //Serial.println("Another scheduler execution cycle has oocured \n");
   switch (state)
     {
-      /*case 0:
+      case 0:
         tWall_detection.enable();
+        //tSet_motor.disable();
         if (dig_IR_0 == 0)
         {
           state = 1;
@@ -228,15 +230,16 @@ void loop() {
         tWall_detection.disable();
         rightMotorSpeed = MOTOR_STOP_SPEED;
         leftMotorSpeed = MOTOR_STOP_SPEED;
-        if (dig_IR_0 == 1)
+        set_motor();
+        collect_weight();
+        /*if (dig_IR_0 == 1)
         {
           state = 0;
-        }
+        }*/
+        state = 0;
       
         break;
-        */
-        case 0:
-        tWall_detection.enable();
+    
 
     }
   

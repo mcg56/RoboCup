@@ -120,42 +120,42 @@ void read_infrared(/* Parameters */){
 
   int short0Raw_IR = analogRead(SHORTIR_0_ADDRESS);
   int filterd0 = medianFilter0.AddValue(short0Raw_IR);
-  rangeShortIR_0 = IR_to_range(short_0, filterd0);
+  rangeShortIR_0 = constrain(IR_to_range(short_0, filterd0),40,300);
   
   int short1Raw_IR = analogRead(SHORTIR_1_ADDRESS);
   int filterd1 = medianFilter1.AddValue(short1Raw_IR);
-  rangeShortIR_1 = IR_to_range(short_1, filterd1);
+  rangeShortIR_1 = constrain(IR_to_range(short_1, filterd1),40,300);
   
 	int medium2Raw_IR = analogRead(MEDIUMIR_2_ADDRESS);
   int filterd2 = medianFilter2.AddValue(medium2Raw_IR);
-  rangeMedIR_2 = IR_to_range(medium_2, filterd2);
+  rangeMedIR_2 = constrain(IR_to_range(medium_2, filterd2),200,800);
   
   int medium3Raw_IR = analogRead(MEDIUMIR_3_ADDRESS);
   int filterd3 = medianFilter3.AddValue(medium3Raw_IR);
-  rangeMedIR_3 = IR_to_range(medium_3, filterd3);
+  rangeMedIR_3 = constrain(IR_to_range(medium_3, filterd3),200,800);
   
   int long4Raw_IR = analogRead(LONGIR_4_ADDRESS);
   int filterd4 = medianFilter4.AddValue(long4Raw_IR);
-  rangeLongIR_4 = IR_to_range(long_4, filterd4);
+  rangeLongIR_4 = constrain(IR_to_range(long_4, filterd4),200,800);
   
   int long5Raw_IR = analogRead(LONGIR_5_ADDRESS);
   int filterd5 = medianFilter5.AddValue(long5Raw_IR);
-  rangeLongIR_5 = IR_to_range(long_5, filterd5);
+  rangeLongIR_5 = constrain(IR_to_range(long_5, filterd5),200,800);
   
-  /*Serial3.print(sEulAnalog.head);
-  Serial3.print("|  0: ");
-  Serial3.print(rangeShortIR_0);
-  Serial3.print("|  1: ");
-  Serial3.print(rangeShortIR_1);
+  
+  /*Serial3.print("|  Bottom: ");
+  Serial3.print(rangeMedIR_2 - 80);
+  Serial3.print("|  Top: ");
+  Serial3.println(rangeLongIR_4);
   */
-  //Serial3.print("|  2: ");
-  //Serial3.print(rangeMedIR_2);
-  //Serial3.print("|  3: ");
-  //Serial3.println(rangeMedIR_3);
-  //Serial3.print("|  4: ");
-  //Serial3.print(rangeLongIR_4);
-  //Serial3.print("|  5: ");
-  //Serial3.println(rangeLongIR_5);
+  /*if ((rangeLongIR_4-(rangeMedIR_2 - 80)) > 100){
+    Serial3.println("Shit");
+  }
+  else {
+    Serial3.println("NO");
+  }*/
+
+
 
  
   
@@ -176,22 +176,22 @@ float IR_to_range(int sensorNum, int filtered_IR){
 	float range;
 	switch(sensorNum) {
     case short_0:
-    range = 21648*pow(filtered_IR, -0.982);
+    range = 25467*pow(filtered_IR, -1.015);
     break;
     case short_1:
-    range = 22837*pow(filtered_IR, -0.992);
+    range = 24379*pow(filtered_IR, -1.005);
     break;
     case medium_2:
-    range = 14805*pow(filtered_IR, -0.768);
+    range = 254987*pow(filtered_IR, -1.291);
     break;
     case medium_3:
-    range = 15863*pow(filtered_IR, -0.784);
+    range = 217995*pow(filtered_IR, -1.267);
     break;
     case long_4:
-    range = 73660*pow(filtered_IR, -0.925);
+    range = 177485*pow(filtered_IR, -1.076);
     break;
     case long_5:
-    range = 97629*pow(filtered_IR, -0.978);
+    range = 124082*pow(filtered_IR, -1.019);
     break;
 	}
 	return range;
