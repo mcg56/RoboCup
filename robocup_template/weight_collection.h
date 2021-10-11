@@ -11,21 +11,17 @@
 
 #include <Servo.h>                  //control the DC motors
 #include <Wire.h>                   //for I2C and SPI
-
-
-
 #include "sensors.h"               //will need sensor library to detect weights
 
-
-//states for swapping between searching and collecting
-#define NO_WEIGHT               0   
-#define WEIGHT_FOUND            1
-
-
-
+extern bool turning_to_weight;
+extern bool weight_detected;
+extern bool failed_collect_weight_flag;
+extern int weight_detected_count;
 
 void weight_scan(/* whatever parameters */);
 
 void collect_weight();
+
+void open_scoop(); //Resets gate to home position
 
 #endif /* WEIGHT_COLLECTION_H_ */

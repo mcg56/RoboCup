@@ -1,22 +1,38 @@
 
 /********************************************************************************
- *                               ROBOCUP TEMPLATE         MCG                     
+ *                               ROBOCUP TEMPLATE         MCG  MATAFAKA                   
  *        
  *  
  *  This is a template program design with modules for 
  *  different components of the robot, and a task scheduler
  *  for controlling how frequently tasks should run
  *  
- *  
  *  written by: Logan Chatfield, Ben Fortune, Lachlan McKenzie, Jake Campbell
+ *  https://forum.arduino.cc/t/using-millis-for-timing-a-beginners-guide/483573
  *  
+ *   
+ *  CPU Load timing code is currently in read IMU
+ *  
+ *  TO DO:
+ *    -Color sensor, dont pick up weights on their base
+ *    -if we happen to be on our own base in last 20 seconds, stay there.
+ *    
+ *    
+ *TO DO: DAY BEFORE COMPETITION
+ *  -Ensure no serial prints
+ *  -check battery solder connection
+ *  -Check resoldered IR are turning on
+ *  -Check tightness of bolts
+ *  -check scoop clamps (tighten)
+ *  -Check cables are clear of tracks
+ *  -check everthing is enabled correctly in code
  ******************************************************************************/
-
+ 
 #include <Servo.h>                  //control the DC motors
-//#include <Herkulex.h>             //smart servo
 #include <Adafruit_TCS34725.h>      //colour sensor
 #include <Wire.h>                   //for I2C and SPI
 #include <TaskScheduler.h>          //scheduler 
+#include <arduino-timer.h>          //timer for round end
 
 // Custom headers
 #include "motors.h"
@@ -24,6 +40,7 @@
 #include "weight_collection.h"
 #include "return_to_base.h" 
 #include "navigation.h"
+#include "watchdog.h"
 
 
 //**********************************************************************************
@@ -32,20 +49,17 @@
 
 // Task period Definitions
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
-#define US_READ_TASK_PERIOD                 10
-#define IR_READ_TASK_PERIOD                 4
+#define US_READ_TASK_PERIOD                 80
+#define IR_READ_TASK_PERIOD                 10
 #define COLOUR_READ_TASK_PERIOD             40
-#define SENSOR_AVERAGE_PERIOD               40
-#define SET_MOTOR_TASK_PERIOD               4
-#define WEIGHT_SCAN_TASK_PERIOD             4
+#define SET_MOTOR_TASK_PERIOD               10
+#define WEIGHT_SCAN_TASK_PERIOD             10
 #define COLLECT_WEIGHT_TASK_PERIOD          40
 #define RETURN_TO_BASE_TASK_PERIOD          40
 #define DETECT_BASE_TASK_PERIOD             40
-#define UNLOAD_WEIGHTS_TASK_PERIOD          40
 #define CHECK_WATCHDOG_TASK_PERIOD          40
-#define VICTORY_DANCE_TASK_PERIOD           40
-#define WALL_DETECTION_TASK_PERIOD          2
-#define IMU_READ_TASK_PERIOD                2
+#define WALL_DETECTION_TASK_PERIOD          10
+#define IMU_READ_TASK_PERIOD                15
 
 
 
@@ -55,7 +69,6 @@
 #define US_READ_TASK_NUM_EXECUTE           -1
 #define IR_READ_TASK_NUM_EXECUTE           -1
 #define COLOUR_READ_TASK_NUM_EXECUTE       -1
-#define SENSOR_AVERAGE_NUM_EXECUTE         -1
 #define SET_MOTOR_TASK_NUM_EXECUTE         -1
 #define WEIGHT_SCAN_TASK_NUM_EXECUTE       -1
 #define COLLECT_WEIGHT_TASK_NUM_EXECUTE    -1
@@ -63,7 +76,6 @@
 #define DETECT_BASE_TASK_NUM_EXECUTE       -1
 #define UNLOAD_WEIGHTS_TASK_NUM_EXECUTE    -1
 #define CHECK_WATCHDOG_TASK_NUM_EXECUTE    -1
-#define VICTORY_DANCE_TASK_NUM_EXECUTE     -1
 #define WALL_DETECTION_TASK_NUM_EXCECUTE   -1
 #define IMU_READ_TASK_NUM_EXCECUTE         -1
 
@@ -72,6 +84,9 @@
 
 // Serial deffinitions
 #define BAUD_RATE 9600
+
+// Timer definitions TO DO: DELETE
+#define RETURN_HOME_TIMER_PERIOD 90000
 
 
 
@@ -83,10 +98,8 @@
    (-1 means indefinitely), third one is the callback function */
 
 // Tasks for reading sensors 
-Task tRead_ultrasonic(US_READ_TASK_PERIOD,         US_READ_TASK_NUM_EXECUTE,          &read_ultrasonic);
 Task tRead_infrared(IR_READ_TASK_PERIOD,           IR_READ_TASK_NUM_EXECUTE,          &read_infrared);
 Task tRead_colour(COLOUR_READ_TASK_PERIOD,         COLOUR_READ_TASK_NUM_EXECUTE,      &read_colour);
-Task tSensor_average(SENSOR_AVERAGE_PERIOD,        SENSOR_AVERAGE_NUM_EXECUTE,        &sensor_average);
 Task tRead_imu(IMU_READ_TASK_PERIOD,               IMU_READ_TASK_NUM_EXCECUTE,        &read_imu);
 
 // Task to set the motor speeds and direction
@@ -99,11 +112,9 @@ Task tCollect_weight(COLLECT_WEIGHT_TASK_PERIOD,   COLLECT_WEIGHT_TASK_NUM_EXECU
 // Tasks to search for bases and unload weights
 Task tReturn_to_base(RETURN_TO_BASE_TASK_PERIOD,   RETURN_TO_BASE_TASK_NUM_EXECUTE,   &return_to_base);
 Task tDetect_base(DETECT_BASE_TASK_PERIOD,         DETECT_BASE_TASK_NUM_EXECUTE,      &detect_base);
-Task tUnload_weights(UNLOAD_WEIGHTS_TASK_PERIOD,   UNLOAD_WEIGHTS_TASK_NUM_EXECUTE,   &unload_weights);
 
 // Tasks to check the 'watchdog' timer (These will need to be added in)
-//Task tCheck_watchdog(CHECK_WATCHDOG_TASK_PERIOD, CHECK_WATCHDOG_TASK_NUM_EXECUTE,   &check_watchdog);
-//Task tVictory_dance(VICTORY_DANCE_TASK_PERIOD,   VICTORY_DANCE_TASK_NUM_EXECUTE,    &victory_dance);
+Task tCheck_watchdog(CHECK_WATCHDOG_TASK_PERIOD, CHECK_WATCHDOG_TASK_NUM_EXECUTE,   &check_watchdog);
 
 // Tasks for navigation
 Task tWall_detection(WALL_DETECTION_TASK_PERIOD,   WALL_DETECTION_TASK_NUM_EXCECUTE,  &wall_detection);
@@ -115,6 +126,7 @@ Scheduler taskManager;
 //**********************************************************************************
 void pin_init();
 void robot_init();
+void timer_init();
 void task_init();
 
 //**********************************************************************************
@@ -127,10 +139,11 @@ void setup() {
   imu_init();
   robot_init();
   task_init();
-  
+  watchdog_timers_init(); 
   Wire.begin();
   
 }
+
 
 //**********************************************************************************
 // Initialise the pins as inputs and outputs (otherwise, they won't work) 
@@ -142,9 +155,7 @@ void pin_init(){
 
     pinMode(IO_POWER, OUTPUT);              //Pin 49 is used to enable IO power
     digitalWrite(IO_POWER, 1);              //Enable IO power on main CPU board
-    pinMode(ULTRASOUND_A_TRIG_PIN, OUTPUT);            //Setup ultrasound pins
-    pinMode(ULTRASOUND_A_ECHO_PIN, INPUT);
-    pinMode(DIG_IR_0_PIN,INPUT);
+    pinMode(DIG_IR_0_PIN,INPUT);            //Digital IR detection
    
 }
 
@@ -154,9 +165,9 @@ void pin_init(){
 void robot_init() {
     right_motor.attach(LEFT_MOTOR_ADDRESS);  // attaches the servo pin 3 to the servo object LEFT_MOTOR_ADDRESS
     left_motor.attach(RIGHT_MOTOR_ADDRESS);  // attaches the servo pin 2 to the servo object
+    servo_big.attach(SERVO_BIG_ADDRESS);
     leftMotorSpeed = MOTOR_STOP_SPEED;
     rightMotorSpeed = MOTOR_STOP_SPEED;
-    servo_big.attach(SERVO_BIG_ADDRESS);
     servo_big.write(0);
     Serial.println("Robot is ready \n");
 }
@@ -170,37 +181,25 @@ void task_init() {
   taskManager.init();     
  
   // Add tasks to the scheduler
-  taskManager.addTask(tRead_ultrasonic);   //reading ultrasonic 
   taskManager.addTask(tRead_infrared);
   taskManager.addTask(tRead_colour);
-  taskManager.addTask(tSensor_average);
   taskManager.addTask(tRead_imu);
   taskManager.addTask(tSet_motor); 
   taskManager.addTask(tWeight_scan);
-  taskManager.addTask(tCollect_weight);
-  taskManager.addTask(tReturn_to_base);
   taskManager.addTask(tDetect_base);
-  taskManager.addTask(tUnload_weights);
   taskManager.addTask(tWall_detection);
-
-  //taskManager.addTask(tCheck_watchdog);
-  //taskManager.addTask(tVictory_dance);      
-
+  taskManager.addTask(tCheck_watchdog);
+     
   //enable the tasks
-  //tRead_ultrasonic.enable();
   tRead_infrared.enable();
   tRead_imu.enable();
-  //tRead_colour.enable();
-  //tSensor_average.enable();
   tSet_motor.enable();
+  tCheck_watchdog.enable();
+  tWall_detection.enable(); //CHECK
   //tWeight_scan.enable();
+  tRead_colour.enable();
   //tCollect_weight.enable();
-  //tReturn_to_base.enable();
   //tDetect_base.enable();
-  //tUnload_weights.enable();
-  //tCheck_watchdog.enable();
-  //tVictory_dance.enable();
-  tWall_detection.enable();
 
  Serial.println("Tasks have been initialised \n");
 }
@@ -213,31 +212,106 @@ void task_init() {
 void loop() {
   taskManager.execute();    //execute the scheduler
   static int state = 0;
-  //Serial.print("eul analog: (unit degree)   "); Serial.print(" head: "); Serial.println(sEulAnalog.head);
-  //Serial.println(rangeUltrasonic_A);
+  static int attempted_collection_count;
   //Serial.println("Another scheduler execution cycle has oocured \n");
   switch (state)
     {
       case 0:
+        Serial3.println("Roaming");
+        Serial.print(red);
         tWall_detection.enable();
-        //tSet_motor.disable();
+        tCheck_watchdog.enable();
+        tWeight_scan.enable();
+        //tWeight_scan.disable();
+        weight_detected_count = 0; 
         if (dig_IR_0 == 0)
         {
           state = 1;
         }
+        if (no_walls_detected_timeout)
+        {
+          state = 2;                           
+        }
+        if (robot_tilting_flag)
+        {
+          state = 2;
+        }
         break;
       case 1:
-        tWall_detection.disable();
+        Serial3.println("Weight Collection");
+        weight_detected_count = 0;
         rightMotorSpeed = MOTOR_STOP_SPEED;
         leftMotorSpeed = MOTOR_STOP_SPEED;
         set_motor();
+        tWall_detection.disable();
+        tCheck_watchdog.disable();
+        tWeight_scan.disable();
         collect_weight();
-        /*if (dig_IR_0 == 1)
+
+        
+        if (attempted_collection_count >=3)
         {
+          failed_collect_weight_flag = 1;
+          state = 3;
+          open_scoop();
+        }
+        if ((dig_IR_0 == 0) && (attempted_collection_count)>=1) //(dig_IR_1 == 0)
+        {
+          attempted_collection_count++;
+          collect_weight();
+        }
+        else
+        {
+          attempted_collection_count = 0;
           state = 0;
-        }*/
-        state = 0;
-      
+          tWeight_scan.enable();
+        }
+        break;
+     case 2: // Watchdog no wall detected time out state
+       Serial3.println("Watch dog");
+       if (no_walls_detected_timeout)
+       {
+          tCheck_watchdog.disable();
+          //Reverse
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          delay(1000);
+          //turn 180
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_FORWARD_TEST_SPEED);      // 
+          delay(700);
+          //go back to search state
+          state = 0;
+          no_walls_detected_timeout = 0;
+       } else if(robot_tilting_flag)
+       {
+          robot_tilting_flag = 0;
+          tCheck_watchdog.disable();
+          //Reverse
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          delay(1000);
+          //turn 180
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_FORWARD_TEST_SPEED);      // 
+          delay(700);
+          //go back to search state
+          state = 0;
+       } else if (failed_collect_weight_flag)
+       {
+          failed_collect_weight_flag = 0;
+          tCheck_watchdog.disable();
+          //Reverse
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          delay(1000);
+          //turn 180
+          right_motor.writeMicroseconds(MOTOR_REVERSE_TEST_SPEED);      // 
+          left_motor.writeMicroseconds(MOTOR_FORWARD_TEST_SPEED);      // 
+          delay(700);
+          //go back to search state
+          state = 0;
+       }
         break;
     
 

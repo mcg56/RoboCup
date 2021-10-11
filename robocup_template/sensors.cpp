@@ -11,6 +11,9 @@
 #include "MedianFilterLib2.h"
 #include "DFRobot_BNO055.h"
 #include "Wire.h"
+#include "Adafruit_TCS34725.h"
+
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 //************************************
 //Globals  
 //************************************
@@ -20,10 +23,10 @@ float rangeMedIR_2;
 float rangeMedIR_3;
 float rangeLongIR_4;
 float rangeLongIR_5;
-long int rangeUltrasonic_A;
 bool dig_IR_0;
 BNO bno(&Wire, 0x28);
 BNO::sEulAnalog_t    sEulAnalog;
+uint16_t clear, red, green, blue;
 
 // Local definitions
 int windowSize = 6;
@@ -46,7 +49,13 @@ typedef enum {
   long_5
 } IR_sensor;
 
-//#define 
+//TIMING CODE
+unsigned long startMillis;  //some global variables available anywhere in the program
+unsigned long currentMillis;
+unsigned long duration;
+float g_current_pitch_euler;
+float g_current_roll_euler;
+bool newdurationflag;
 
 long microsecondsToMillimeters(long microseconds)
 {
@@ -78,39 +87,27 @@ void imu_init()
 }
 
 void read_imu()
-{
-  BNO::sAxisAnalog_t   sAccAnalog, sMagAnalog, sGyrAnalog, sLiaAnalog, sGrvAnalog;
-  BNO::sQuaAnalog_t    sQuaAnalog;
-  sAccAnalog = bno.getAxis(BNO::eAxisAcc);    // read acceleration
+{ 
+  //startMillis = micros();
+  //BNO::sAxisAnalog_t   sAccAnalog, sMagAnalog, sGyrAnalog, sLiaAnalog, sGrvAnalog;
+  //BNO::sQuaAnalog_t    sQuaAnalog;
+  BNO::sEulAnalog_t    sEulAnalog;
+  /*sAccAnalog = bno.getAxis(BNO::eAxisAcc);    // read acceleration
   sMagAnalog = bno.getAxis(BNO::eAxisMag);    // read geomagnetic
   sGyrAnalog = bno.getAxis(BNO::eAxisGyr);    // read gyroscope
   sLiaAnalog = bno.getAxis(BNO::eAxisLia);    // read linear acceleration
-  sGrvAnalog = bno.getAxis(BNO::eAxisGrv);    // read gravity vector
+  sGrvAnalog = bno.getAxis(BNO::eAxisGrv);    // read gravity vector*/
   sEulAnalog = bno.getEul();                  // read euler angle
-  sQuaAnalog = bno.getQua();                  // read quaternion
-  
-  
-}
-
-// Read ultrasonic value
-void read_ultrasonic(/* Parameters */){
-  long duration;
- 
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(ULTRASOUND_A_TRIG_PIN, LOW);
-  delayMicroseconds(2);
-  digitalWrite(ULTRASOUND_A_TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(ULTRASOUND_A_TRIG_PIN, LOW);
- 
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  duration = pulseIn(ULTRASOUND_A_ECHO_PIN, HIGH);
- 
-  // convert the time into a distance
-  rangeUltrasonic_A = microsecondsToMillimeters(duration);
+  /*sQuaAnalog = bno.getQua();                  // read quaternion
+  float magnetic_direction_deg = magAnalogue_to_degrees(sMagAnalog);
+  g_current_heading_euler = sEulAnalog.head;
+  g_magnetic_direction_deg_filtered = medianFilter7_IMU.AddValue(magnetic_direction_deg);*/
+  g_current_roll_euler = sEulAnalog.roll;
+  g_current_pitch_euler = sEulAnalog.pitch;
+  /*currentMillis = micros();
+  duration = currentMillis - startMillis;
+  Serial.println(duration);
+  newdurationflag = 1;*/
 }
 
 
@@ -142,34 +139,24 @@ void read_infrared(/* Parameters */){
   int filterd5 = medianFilter5.AddValue(long5Raw_IR);
   rangeLongIR_5 = constrain(IR_to_range(long_5, filterd5),200,800);
   
-  
-  /*Serial3.print("|  Bottom: ");
-  Serial3.print(rangeMedIR_2 - 80);
-  Serial3.print("|  Top: ");
-  Serial3.println(rangeLongIR_4);
-  */
-  /*if ((rangeLongIR_4-(rangeMedIR_2 - 80)) > 100){
-    Serial3.println("Shit");
-  }
-  else {
-    Serial3.println("NO");
-  }*/
-
-
-
- 
-  
-  
 }
 
 // Read colour sensor value
 void read_colour(/* Parameters */){
-  Serial.println("colour value \n");  
+  ///uint16_t clear, red, green, blue;
+  tcs.setInterrupt(false);      // turn on LED
+  delay(60);  // takes 50ms to read 
+  tcs.getRawData(&red, &green, &blue, &clear);
+  tcs.setInterrupt(true);  // turn off LED
+  //Serial.print("R:  "); Serial.println(red);
+  //Serial3.print("R:  "); Serial3.print(red);
+  //Serial3.print("   G:   "); Serial3.print(green);
+  //Serial3.print("   B:   "); Serial3.println(blue);
 }
 
 // Pass in data and average the lot
 void sensor_average(/* Parameters */){
-  Serial.println("Averaging the sensors \n");
+  //Serial.println("Averaging the sensors \n");
 }
 
 float IR_to_range(int sensorNum, int filtered_IR){
