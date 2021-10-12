@@ -1,6 +1,6 @@
 
 /********************************************************************************
- *                               ROBOCUP TEMPLATE         MCG  MATAFAKA                   
+ *                               ROBOCUP TEMPLATE         MCG  MATAFAKA      DONE             
  *        
  *  
  *  This is a template program design with modules for 
@@ -51,7 +51,7 @@
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
 #define US_READ_TASK_PERIOD                 80
 #define IR_READ_TASK_PERIOD                 10
-#define COLOUR_READ_TASK_PERIOD             40
+#define COLOUR_READ_TASK_PERIOD             1000
 #define SET_MOTOR_TASK_PERIOD               10
 #define WEIGHT_SCAN_TASK_PERIOD             10
 #define COLLECT_WEIGHT_TASK_PERIOD          40
@@ -169,6 +169,7 @@ void robot_init() {
     leftMotorSpeed = MOTOR_STOP_SPEED;
     rightMotorSpeed = MOTOR_STOP_SPEED;
     servo_big.write(0);
+    //init_colour_sensor();
     Serial.println("Robot is ready \n");
 }
 
@@ -197,7 +198,7 @@ void task_init() {
   tCheck_watchdog.enable();
   tWall_detection.enable(); //CHECK
   //tWeight_scan.enable();
-  tRead_colour.enable();
+  tRead_colour.disable();
   //tCollect_weight.enable();
   //tDetect_base.enable();
 
@@ -221,6 +222,7 @@ void loop() {
         Serial.print(red);
         tWall_detection.enable();
         tCheck_watchdog.enable();
+        tRead_colour.disable();
         tWeight_scan.enable();
         //tWeight_scan.disable();
         weight_detected_count = 0; 
@@ -246,6 +248,7 @@ void loop() {
         tWall_detection.disable();
         tCheck_watchdog.disable();
         tWeight_scan.disable();
+        tRead_colour.disable();
         collect_weight();
 
         
@@ -269,6 +272,7 @@ void loop() {
         break;
      case 2: // Watchdog no wall detected time out state
        Serial3.println("Watch dog");
+       tRead_colour.disable();
        if (no_walls_detected_timeout)
        {
           tCheck_watchdog.disable();

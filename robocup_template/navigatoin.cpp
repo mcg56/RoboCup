@@ -43,18 +43,18 @@ void wall_detection()
     }
     
     {*/
-      if (((rangeShortIR_0 < CORNER_IR_LIMIT) || (rangeLongIR_5) < 250))
+      if (((rangeShortIR_0 < CORNER_IR_LIMIT) || (rangeLongIR_5) < 225)) //((rangeShortIR_0 < CORNER_IR_LIMIT) || (rangeLongIR_5) < 225))
       {
         wall_detected_flag = 1;
-        Serial3.print("object left");
+        Serial3.println("object left");
         cw_rotation_flag = 1;
         leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
         rightMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
       }
-      else if (((rangeShortIR_1 < CORNER_IR_LIMIT) || (rangeLongIR_4) < 250))
+      else if (((rangeShortIR_1 < CORNER_IR_LIMIT) || (rangeLongIR_4) < 225))  //(((rangeShortIR_1 < CORNER_IR_LIMIT) || (rangeLongIR_4) < 225))
       {
         wall_detected_flag = 1;
-        Serial3.print("object right");
+        Serial3.println("object right");
         ccw_rotation_flag = 1;
         leftMotorSpeed = MOTOR_REVERSE_TEST_SPEED;
         rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;   
@@ -62,7 +62,7 @@ void wall_detection()
 
       else // Not sensing walls, go forward
       {
-        Serial3.print("Clear");
+        Serial3.println("Clear");
         rightMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
         leftMotorSpeed = MOTOR_FORWARD_TEST_SPEED;
         previous_cw_turn = 0;

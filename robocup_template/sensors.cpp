@@ -140,17 +140,18 @@ void read_infrared(/* Parameters */){
   rangeLongIR_5 = constrain(IR_to_range(long_5, filterd5),200,800);
   
 }
+void init_colour_sensor(){
+  tcs.begin();
+  tcs.setInterrupt(false);      // turn on LED
+}
 
 // Read colour sensor value
 void read_colour(/* Parameters */){
   ///uint16_t clear, red, green, blue;
-  tcs.setInterrupt(false);      // turn on LED
-  delay(60);  // takes 50ms to read 
   tcs.getRawData(&red, &green, &blue, &clear);
-  tcs.setInterrupt(true);  // turn off LED
   //Serial.print("R:  "); Serial.println(red);
   //Serial3.print("R:  "); Serial3.print(red);
-  //Serial3.print("   G:   "); Serial3.print(green);
+  Serial3.print("   G:   "); Serial3.println(green);
   //Serial3.print("   B:   "); Serial3.println(blue);
 }
 

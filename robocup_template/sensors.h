@@ -47,6 +47,7 @@ void read_ultrasonic(/* Parameters */);
 void read_infrared(/* Parameters */);
 
 void read_colour(/* Parameters */);
+void init_colour_sensor();
 
 // Pass in data and average the lot
 void sensor_average(/* Parameters */);
